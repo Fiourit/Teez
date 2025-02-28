@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teez</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            min-height: 100vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        #gameContainer {
+            border: 4px solid #333;
+            border-radius: 10px;
+            width: min(900px, 90vw);
+            height: min(450px, 45vh);
+            position: relative;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin: 20px;
+            cursor: none;
+            touch-action: none;
+        }
+
+        #cursor {
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #ff4444 0%, #ff4444 50%, #ff0000 100%);
+            border-radius: 50%;
+            position: absolute;
+            pointer-events: none;
+            transition: transform 0.1s ease;
+            box-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+        }
+
+        #previewLine, #finalLine1, #finalLine2 {
+            stroke: #00f;
+            stroke-width: 2;
+            stroke-dasharray: 3;
+            animation: dash 1s linear infinite;
+        }
+
+        @keyframes dash {
+            to { stroke-dashoffset: 6; }
+        }
+
+        #levelInfo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px;
+            padding: 8px 15px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.7);
+            text-align: center;
+        }
+
+        #restartButton {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, background 0.3s;
+            margin-bottom: 20px;
+        }
+
+        #restartButton:hover {
+            transform: scale(1.05);
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+        }
+
+        line {
+            stroke: #333;
+            stroke-width: 1.5;
+            transition: stroke 0.2s ease;
+        }
+
+        line:hover {
+            stroke: #000;
+            stroke-width: 2;
+        }
+
+        #instructions {
+            font-size: 16px;
+            color: #2c3e50;
+            margin: 20px auto;
+            padding: 0 20px;
+            max-width: 900px;
+            line-height: 1.5;
+            width: 90%;
+        }
+
+        #topLeftLogo {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 150px;
+        }
+
+        #topRightLogo {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 150px;
+        }
+
+        #topLeftLogo img, #topRightLogo img {
+            width: 100%;
+            height: auto;
+        }
+
+        #topLeftLogo .tagline {
+            font-size: 16px;
+            font-style: italic;
+            color: #555;
+            text-align: center;
+            margin-top: 5px;
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (max-width: 600px) {
+            #gameContainer {
+                width: 90vw;
+                height: 40vh;
+            }
+
+            #levelInfo {
+                font-size: 18px;
+                padding: 6px 10px;
+            }
+
+            #restartButton {
+                font-size: 16px;
+                padding: 8px 15px;
+            }
+
+            #instructions {
+                font-size: 14px;
+            }
+
+            #topLeftLogo, #topRightLogo {
+                width: 100px;
+            }
+
+            #topLeftLogo .tagline {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="topLeftLogo">
+        <img src="Logo - Teez.jpg" alt="Teez Logo">
+        <div class="tagline">Sharp Moves Only</div>
+    </div>
+    <div id="topRightLogo">
+        <img src="Logo - FiouriT.png" alt="FiouriT Logo">
+    </div>
+    <div id="levelInfo">Level 1</div>
+    <div id="gameContainer"></div>
+    <button id="restartButton">Restart</button>
+
+    <script>
+        const gameContainer = document.getElementById('gameContainer');
+        const levelInfo = document.getElementById('levelInfo');
+        const restartButton = document.getElementById('restartButton');
+        const cursor = document.createElement('div');
+        cursor.id = 'cursor';
+        gameContainer.appendChild(cursor);
+
+        let currentLevel = 1;
+        let lines = [];
+        let startPoint = null;
+        let endPoint = null;
+        let playerLines = [];
+        let previewLine = null;
+        let maxIntersections = 0;
+        const levelLines = Array.from({ length: 20 }, (_, i) => 5 + i * 2);
+
+        function initGame() {
+            gameContainer.innerHTML = '';
+            gameContainer.appendChild(cursor);
+            lines = [];
+            startPoint = null;
+            endPoint = null;
+            playerLines = [];
+            if (previewLine) previewLine.remove();
+            drawRandomLines();
+            calculateMaxIntersections();
+            updateLevelInfo();
+        }
+
+        function drawRandomLines() {
+            const numLines = levelLines[currentLevel - 1];
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
+
+            const width = gameContainer.offsetWidth;
+            const height = gameContainer.offsetHeight;
+            const padding = 20;
+
+            for (let i = 0; i < numLines; i++) {
+                const x1 = padding + Math.random() * (width - 2 * padding);
+                const y1 = padding + Math.random() * (height - 2 * padding);
+                const x2 = padding + Math.random() * (width - 2 * padding);
+                const y2 = padding + Math.random() * (height - 2 * padding);
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                lines.push({ x1, y1, x2, y2 });
+                svg.appendChild(line);
+            }
+            gameContainer.appendChild(svg);
+        }
+
+        function calculateMaxIntersections() {
+            maxIntersections = 0;
+            const width = gameContainer.offsetWidth;
+            const height = gameContainer.offsetHeight;
+            const step = Math.min(width, height) / 40;
+
+            for (let x1 = 0; x1 <= width; x1 += step) {
+                for (let y1 = 0; y1 <= height; y1 += step) {
+                    for (let x2 = 0; x2 <= width; x2 += step) {
+                        for (let y2 = 0; y2 <= height; y2 += step) {
+                            if (x1 === x2 && y1 === y2) continue;
+                            const testLine = { x1, y1, x2, y2 };
+                            let intersections = 0;
+                            lines.forEach(line => {
+                                if (doLinesIntersect(testLine, line)) {
+                                    intersections++;
+                                }
+                            });
+                            maxIntersections = Math.max(maxIntersections, intersections);
+                        }
+                    }
+                }
+            }
+            if (maxIntersections < lines.length) {
+                maxIntersections = Math.min(lines.length, maxIntersections);
+            }
+            console.log(`Maximum possible intersections: ${maxIntersections}`);
+        }
+
+        function handleMouseMove(e) {
+            const rect = gameContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            updateCursor(x, y);
+            if (startPoint && playerLines.length < 2) {
+                drawPreviewLine(startPoint, { x, y });
+            }
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const rect = gameContainer.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            updateCursor(x, y);
+            if (startPoint && playerLines.length < 2) {
+                drawPreviewLine(startPoint, { x, y });
+            }
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const rect = gameContainer.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            handleClick({ clientX: touch.clientX, clientY: touch.clientY });
+        }
+
+        function handleTouchEnd(e) {
+            // No additional action needed
+        }
+
+        function updateCursor(x, y) {
+            cursor.style.left = `${x - 4}px`;
+            cursor.style.top = `${y - 4}px`;
+            cursor.style.transform = 'scale(1.1)';
+            setTimeout(() => cursor.style.transform = 'scale(1)', 100);
+        }
+
+        function handleClick(e) {
+            const rect = gameContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (!startPoint && playerLines.length < 2) {
+                startPoint = { x, y };
+                cursor.style.background = 'radial-gradient(circle, #00ff00 0%, #00cc00 50%, #008800 100%)';
+            } else if (startPoint && !endPoint && playerLines.length < 2) {
+                if (x === startPoint.x && y === startPoint.y) return;
+                endPoint = { x, y };
+                cursor.style.background = 'radial-gradient(circle, #ff4444 0%, #ff4444 50%, #ff0000 100%)';
+                drawFinalLine();
+                checkIntersections();
+            }
+        }
+
+        function drawPreviewLine(start, end) {
+            if (previewLine) previewLine.remove();
+            const svg = gameContainer.querySelector('svg');
+            previewLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            previewLine.setAttribute('x1', start.x);
+            previewLine.setAttribute('y1', start.y);
+            previewLine.setAttribute('x2', end.x);
+            previewLine.setAttribute('y2', end.y);
+            previewLine.id = 'previewLine';
+            svg.appendChild(previewLine);
+        }
+
+        function drawFinalLine() {
+            if (previewLine) previewLine.remove();
+            const svg = gameContainer.querySelector('svg');
+            const newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            newLine.setAttribute('x1', startPoint.x);
+            newLine.setAttribute('y1', startPoint.y);
+            newLine.setAttribute('x2', endPoint.x);
+            newLine.setAttribute('y2', endPoint.y);
+            newLine.setAttribute('stroke', '#ff4444');
+            newLine.setAttribute('stroke-width', '2');
+            newLine.setAttribute('stroke-dasharray', '6');
+            newLine.style.animation = 'dash 1s linear infinite';
+            newLine.id = playerLines.length === 0 ? 'finalLine1' : 'finalLine2';
+            svg.appendChild(newLine);
+            playerLines.push({ x1: startPoint.x, y1: startPoint.y, x2: endPoint.x, y2: endPoint.y });
+            startPoint = null;
+            endPoint = null;
+            cursor.style.background = 'radial-gradient(circle, #ff4444 0%, #ff4444 50%, #ff0000 100%)';
+        }
+
+        function checkIntersections() {
+            let intersections = 0;
+            const playerLine = playerLines[playerLines.length - 1];
+
+            lines.forEach(line => {
+                if (doLinesIntersect(playerLine, line)) {
+                    intersections++;
+                }
+            });
+
+            const message = document.createElement('div');
+            message.style.position = 'absolute';
+            message.style.top = '50%';
+            message.style.left = '50%';
+            message.style.transform = 'translate(-50%, -50%)';
+            message.style.fontSize = '20px';
+            message.style.color = '#2c3e50';
+            message.style.background = 'rgba(255, 255, 255, 0.7)';
+            message.style.padding = '8px';
+            message.style.borderRadius = '4px';
+
+            const MESSAGE_DURATION = 1500;
+
+            if (maxIntersections === 0) {
+                message.textContent = 'No intersections possible. Next level!';
+                message.style.color = '#27ae60';
+                setTimeout(() => {
+                    message.remove();
+                    proceedToNextLevel();
+                }, MESSAGE_DURATION);
+            } else if (intersections === maxIntersections) {
+                message.textContent = `Perfect! ${intersections} lines intersected!`;
+                message.style.color = '#27ae60';
+                setTimeout(() => {
+                    message.remove();
+                    proceedToNextLevel();
+                }, MESSAGE_DURATION);
+            } else {
+                message.textContent = `${intersections} lines intersected. Try again.`;
+                message.style.color = '#e74c3c';
+                setTimeout(() => {
+                    const linesToRemove = gameContainer.querySelectorAll('#previewLine, #finalLine1, #finalLine2');
+                    linesToRemove.forEach(line => line.remove());
+                    message.remove();
+                    playerLines = [];
+                    startPoint = null;
+                    endPoint = null;
+                    cursor.style.background = 'radial-gradient(circle, #ff4444 0%, #ff4444 50%, #ff0000 100%)';
+                }, MESSAGE_DURATION);
+            }
+            gameContainer.appendChild(message);
+        }
+
+        function proceedToNextLevel() {
+            currentLevel++;
+            if (currentLevel <= 20) {
+                initGame();
+            } else {
+                const winMessage = document.createElement('div');
+                winMessage.style.position = 'absolute';
+                winMessage.style.top = '50%';
+                winMessage.style.left = '50%';
+                winMessage.style.transform = 'translate(-50%, -50%)';
+                winMessage.style.fontSize = '28px';
+                winMessage.style.color = '#2c3e50';
+                winMessage.style.background = 'rgba(255, 255, 255, 0.7)';
+                winMessage.style.padding = '15px';
+                winMessage.style.borderRadius = '8px';
+                winMessage.textContent = 'Congratulations! You completed all levels!';
+                gameContainer.appendChild(winMessage);
+                setTimeout(() => {
+                    winMessage.remove();
+                    currentLevel = 1;
+                    initGame();
+                }, 3000);
+            }
+        }
+
+        function doLinesIntersect(line1, line2) {
+            const x1 = line1.x1, y1 = line1.y1, x2 = line1.x2, y2 = line1.y2;
+            const x3 = line2.x1, y3 = line2.y1, x4 = line2.x2, y4 = line2.y2;
+
+            const dx1 = x2 - x1, dy1 = y2 - y1;
+            const dx2 = x4 - x3, dy2 = y4 - y3;
+
+            const det = dx1 * dy2 - dy1 * dx2;
+            if (Math.abs(det) < 0.0001) return false;
+
+            const px = x3 - x1, py = y3 - y1;
+            const t = (px * dy2 - py * dx2) / det;
+            const s = (px * dy1 - py * dx1) / det;
+
+            const tolerance = 0.0001;
+            return t >= -tolerance && t <= 1 + tolerance && s >= -tolerance && s <= 1 + tolerance;
+        }
+
+        function updateLevelInfo() {
+            levelInfo.textContent = `Level ${currentLevel}`;
+        }
+
+        gameContainer.addEventListener('mousemove', handleMouseMove);
+        gameContainer.addEventListener('click', handleClick);
+        gameContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+        gameContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+        gameContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
+        restartButton.addEventListener('click', () => {
+            initGame();
+        });
+
+        initGame();
+    </script>
+
+    <div id="instructions">
+        <h2>How to Play Teez</h2>
+        <p>Welcome to Teez, the game of sharp strategy! Your goal is to draw lines within the frame to intersect the maximum number of random lines on the screen. Here’s how to play:</p>
+        <ul>
+            <li>Use the red cursor (visible only inside the game area) to move anywhere on the screen (tap or click on mobile).</li>
+            <li>Click or tap once to set the starting point of your line (the cursor turns green).</li>
+            <li>Click or tap again to set the ending point of your line (the cursor turns red).</li>
+            <li>You can try each level as many times as you want until you win that level.</li>
+            <li>If you intersect the maximum number of lines, you’ll proceed to the next level.</li>
+            <li>The game has 20 levels, with increasing numbers of lines from easy (Level 1) to difficult (Level 20).</li>
+            <li>Click "Restart" to reset the current level and try again.</li>
+        </ul>
+        <p>Good luck, and enjoy sharpening your skills in Teez!</p>
+    </div>
+</body>
+</html>
