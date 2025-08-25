@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BaaztaaB</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #E0E0E0;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-y: auto;
+            flex-direction: column;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #2c3e50;
+        }
+
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background-color: #1E1E1E;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+            border: 4px solid #333;
+        }
+
+        #ui-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h1, h2 {
+            margin: 0;
+            text-align: center;
+        }
+
+        #levelInfo {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #BB86FC;
+            font-size: 24px;
+            color: #2c3e50;
+            margin: 10px;
+            padding: 8px 15px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        #gameCanvas {
+            border: 2px solid #333;
+            background-color: #242424;
+            border-radius: 12px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .game-button {
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            color: #1E1E1E;
+            background: linear-gradient(145deg, #BB86FC, #6200EE);
+        }
+
+        .game-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        #message-area {
+            text-align: center;
+            height: 30px;
+            color: #BB86FC;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .control-buttons .game-button {
+            padding: 8px 16px;
+            font-size: 1.2em;
+        }
+        
+        #instruction-container {
+            width: 80%;
+            max-width: 800px;
+            background-color: #1E1E1E;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            color: #BB86FC;
+            text-align: center;
+            margin-top: 0;
+        }
+
+        p {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+
+        ul {
+            padding-left: 20px;
+            margin: 5px 0;
+        }
+
+        #topLeftLogo {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 150px;
+        }
+
+        #topRightLogo {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 150px;
+        }
+
+        #topLeftLogo img, #topRightLogo img {
+            width: 100%;
+            height: auto;
+        }
+
+        #topLeftLogo .tagline {
+            font-size: 16px;
+            font-style: italic;
+            color: #555;
+            text-align: center;
+            margin-top: 5px;
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+    <div id="topLeftLogo">
+        <img src="/Teez/images/Logo-BaaztaaB.png" alt="BaaztaaB Logo">
+        <div class="tagline">Your Mind, Your Mirror</div>
+    </div>
+    <div id="topRightLogo">
+        <img src="/BaaztaaB/images/Logo-FiouriT.png" alt="FiouriT Logo">
+    </div>
+
+    <div id="gameContainer">
+        <div id="levelInfo">Level 1</div>
+        <canvas id="gameCanvas"></canvas>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <div style="display: flex; gap: 10px;">
+                <button id="launchBtn" class="game-button">Launch Ball</button>
+                <button id="resetBtn" class="game-button">Reset</button>
+                <button id="nextLevelBtn" class="game-button hidden">Next Level</button>
+            </div>
+            <div id="message-area"></div>
+            <div class="control-buttons hidden">
+                <button id="rotateLeftBtn" class="game-button">Rotate ◀️</button>
+                <button id="rotateRightBtn" class="game-button">Rotate ▶️</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="instruction-container">
+        <h3>🎮 BaaztaaB Game Instructions</h3>
+        <p>Welcome to **BaaztaaB**, a challenging puzzle game where you use reflective surfaces to guide a ball to its goal!</p>
+        <p>Your mission is to guide the **red ball** from the cannon to the **glass goal** by bouncing it off **all** the reflective surfaces. The ball must hit every single reflective surface before it shatters the goal. If the ball reaches the goal but has missed any of the surfaces, it's still a **failure**!</p>
+        <ul>
+            <li>**Select and Aim:** Click on a reflective surface to **select it**. The selected surface will glow, and the cannon's launch angle will automatically point directly at its center. This shows you exactly where the ball will go.</li>
+            <li>**Move:** Click and drag a reflective surface to move it anywhere on the canvas.</li>
+            <li>**Rotate:** Use the **Rotate** buttons to adjust the angle of the currently selected surface. Each click will rotate the surface by a precise 10 degrees.</li>
+            <li>**Launch:** Once you are ready, click the **Launch Ball** button to release the ball.</li>
+            <li>**Reset:** If you make a mistake or the ball misses, click the **Reset** button to start the level over.</li>
+            <li>**Next Level:** After successfully completing a level, the **Next Level** button will appear. Click it to continue!</li>
+        </ul>
+        <p>Good luck, and have fun!</p>
+    </div>
+
+    <script>
+        // Constants and canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('gameContainer');
+        const messageArea = document.getElementById('message-area');
+        const controlButtonsContainer = document.querySelector('.control-buttons');
+        const MIN_GOAL_DISTANCE = 100; // Minimum distance from a reflective surface to the goal
+
+        // Make canvas responsive
+        let canvasWidth, canvasHeight;
+        const resizeCanvas = () => {
+            canvasWidth = container.clientWidth - 40;
+            canvasHeight = window.innerHeight * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+        };
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Game objects and state
+        let ball, tube, goal, reflectiveSurfaces;
+        let isBallLaunched = false;
+        let gameWon = false;
+        let currentLevel = 0;
+        let shatterParticles = [];
+        let collisionParticles = [];
+        let selectedSurface = null;
+        let isDragging = false;
+        let dragStartX, dragStartY;
+        let surfacesHit = new Set(); // To track which surfaces have been hit
+
+        // --- Game Data: Levels ---
+        const levels = [
+            {
+                surfaces: [
+                    { p1: { x: canvas.width / 2 - 50, y: canvas.height / 2 }, p2: { x: canvas.width / 2 + 50, y: canvas.height / 2 }, movable: true, rotatable: true, color: '#00C853' }
+                ]
+            },
+            {
+                surfaces: [
+                    { p1: { x: canvas.width / 3 - 50, y: canvas.height / 2 }, p2: { x: canvas.width / 3 + 50, y: canvas.height / 2 }, movable: true, rotatable: true, color: '#00C853' },
+                    { p1: { x: canvas.width / 3 * 2 - 50, y: canvas.height / 2 - 50 }, p2: { x: canvas.width / 3 * 2 + 50, y: canvas.height / 2 - 50 }, movable: true, rotatable: true, color: '#00C853' }
+                ]
+            },
+            {
+                surfaces: [
+                    { p1: { x: canvas.width / 4, y: canvas.height / 2 + 50 }, p2: { x: canvas.width / 4, y: canvas.height / 2 - 50 }, movable: true, rotatable: true, color: '#00C853' },
+                    { p1: { x: canvas.width / 2, y: 150 }, p2: { x: canvas.width / 2 + 100, y: 150 }, movable: true, rotatable: true, color: '#00C853' },
+                    { p1: { x: canvas.width / 2, y: canvas.height - 150 }, p2: { x: canvas.width / 2 - 100, y: canvas.height - 150 }, movable: true, rotatable: true, color: '#00C853' }
+                ]
+            },
+            // More levels can be added here, increasing the number of surfaces for more challenge.
+        ];
+
+        // --- Game Classes ---
+        class Ball {
+            constructor(x, y, radius, color) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = color;
+                this.vx = 0;
+                this.vy = 0;
+                this.speed = 8;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.closePath();
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+        }
+
+        class Tube {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.length = 60;
+                this.width = 15;
+                this.angle = 0; // Angle in radians
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                
+                ctx.fillStyle = '#4B4B4B';
+                ctx.beginPath();
+                ctx.rect(0, -this.width / 2, this.length, this.width);
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.fillStyle = '#6D6D6D';
+                ctx.beginPath();
+                ctx.arc(0, 0, this.width / 2 + 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.restore();
+            }
+        }
+
+        class Wall {
+            constructor(p1, p2, color, movable = false, rotatable = false) {
+                this.p1 = { x: p1.x, y: p1.y };
+                this.p2 = { x: p2.x, y: p2.y };
+                this.color = color;
+                this.movable = movable;
+                this.rotatable = rotatable;
+                this.angle = 0;
+                this.cx = (this.p1.x + this.p2.x) / 2;
+                this.cy = (this.p1.y + this.p2.y) / 2;
+            }
+
+            draw(isSelected = false, hasBeenHit = false) {
+                const gradient = ctx.createLinearGradient(this.p1.x, this.p1.y, this.p2.x, this.p2.y);
+                gradient.addColorStop(0, '#555555');
+                gradient.addColorStop(0.5, '#A0A0A0');
+                gradient.addColorStop(1, '#555555');
+
+                ctx.strokeStyle = hasBeenHit ? '#FF6347' : (isSelected ? '#FFD700' : gradient);
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.shadowBlur = isSelected ? 15 : 0;
+                ctx.shadowColor = isSelected ? '#FFD700' : 'transparent';
+                
+                ctx.beginPath();
+                ctx.moveTo(this.p1.x, this.p1.y);
+                ctx.lineTo(this.p2.x, this.p2.y);
+                ctx.stroke();
+                ctx.closePath();
+
+                ctx.shadowBlur = 0;
+            }
+            
+            isNear(x, y) {
+                const dist = (x, y, x1, y1, x2, y2) => {
+                    const A = x - x1;
+                    const B = y - y1;
+                    const C = x2 - x1;
+                    const D = y2 - y1;
+
+                    const dot = A * C + B * D;
+                    const len_sq = C * C + D * D;
+                    let param = -1;
+                    if (len_sq != 0)
+                        param = dot / len_sq;
+
+                    let xx, yy;
+                    if (param < 0) {
+                        xx = x1;
+                        yy = y1;
+                    } else if (param > 1) {
+                        xx = x2;
+                        yy = y2;
+                    } else {
+                        xx = x1 + param * C;
+                        yy = y1 + param * D;
+                    }
+                    const dx = x - xx;
+                    const dy = y - yy;
+                    return Math.sqrt(dx * dx + dy * dy);
+                };
+                return dist(x, y, this.p1.x, this.p1.y, this.p2.x, this.p2.y) < 15;
+            }
+            
+            move(dx, dy) {
+                if (this.movable) {
+                    const newP1 = { x: this.p1.x + dx, y: this.p1.y + dy };
+                    const newP2 = { x: this.p2.x + dx, y: this.p2.y + dy };
+                    
+                    const newCx = (newP1.x + newP2.x) / 2;
+                    const newCy = (newP1.y + newP2.y) / 2;
+                    const distToGoal = Math.hypot(newCx - goal.x, newCy - goal.y);
+                    
+                    if (distToGoal > MIN_GOAL_DISTANCE) {
+                        this.p1.x = newP1.x;
+                        this.p1.y = newP1.y;
+                        this.p2.x = newP2.x;
+                        this.p2.y = newP2.y;
+                        this.cx = newCx;
+                        this.cy = newCy;
+                    }
+                }
+            }
+            
+            rotate(deltaAngle) {
+                if (this.rotatable) {
+                    this.angle += deltaAngle;
+                    const length = Math.hypot(this.p2.x - this.p1.x, this.p2.y - this.p1.y);
+                    const halfLength = length / 2;
+                    this.p1.x = this.cx + halfLength * Math.cos(this.angle + Math.PI);
+                    this.p1.y = this.cy + halfLength * Math.sin(this.angle + Math.PI);
+                    this.p2.x = this.cx + halfLength * Math.cos(this.angle);
+                    this.p2.y = this.cy + halfLength * Math.sin(this.angle);
+                }
+            }
+        }
+
+        class Goal {
+            constructor(x, y, radius) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = '#BB86FC';
+                this.shattered = false;
+            }
+
+            draw() {
+                if (this.shattered) return;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(187, 134, 252, 0.4)';
+                ctx.strokeStyle = '#BB86FC';
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#BB86FC';
+                ctx.stroke();
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.closePath();
+            }
+
+            shatter() {
+                this.shattered = true;
+                for (let i = 0; i < 50; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    shatterParticles.push({
+                        x: this.x,
+                        y: this.y,
+                        vx: Math.cos(angle) * (Math.random() * 5 + 1),
+                        vy: Math.sin(angle) * (Math.random() * 5 + 1),
+                        life: 60,
+                        size: Math.random() * 3 + 1,
+                        color: 'rgba(187, 134, 252, 0.8)'
+                    });
+                }
+            }
+        }
+
+        function createCollisionParticles(x, y) {
+            for (let i = 0; i < 10; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                collisionParticles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * (Math.random() * 3 + 1),
+                    vy: Math.sin(angle) * (Math.random() * 3 + 1),
+                    life: 30,
+                    size: Math.random() * 2 + 1,
+                    color: 'rgba(255, 255, 255, 0.7)'
+                });
+            }
+        }
+
+        // --- Game Logic Functions ---
+        function loadLevel(levelIndex) {
+            if (levelIndex >= levels.length) {
+                showMessage("Congratulations!", "You've completed all levels!");
+                document.getElementById('nextLevelBtn').classList.add('hidden');
+                return;
+            }
+
+            const levelData = levels[levelIndex];
+            document.getElementById('levelInfo').innerText = `Level ${levelIndex + 1}`;
+            
+            const tubeX = 50;
+            const tubeY = canvas.height - 50;
+            const goalX = canvas.width - 50;
+            const goalY = 50;
+
+            ball = new Ball(tubeX + 15, tubeY, 8, '#FF0000');
+            tube = new Tube(tubeX, tubeY);
+            goal = new Goal(goalX, goalY, 20);
+            
+            reflectiveSurfaces = levelData.surfaces.map(s => {
+                const ratioW = canvas.width / 600;
+                const ratioH = canvas.height / 400;
+                const newP1 = { x: s.p1.x * ratioW, y: s.p1.y * ratioH };
+                const newP2 = { x: s.p2.x * ratioW, y: s.p2.y * ratioH };
+                const wall = new Wall(newP1, newP2, s.color, s.movable, s.rotatable);
+                return wall;
+            });
+
+            isBallLaunched = false;
+            gameWon = false;
+            shatterParticles = [];
+            collisionParticles = [];
+            selectedSurface = null;
+            surfacesHit.clear();
+            document.getElementById('launchBtn').classList.remove('hidden');
+            document.getElementById('resetBtn').classList.remove('hidden');
+            document.getElementById('nextLevelBtn').classList.add('hidden');
+            controlButtonsContainer.classList.add('hidden');
+            hideMessage();
+            
+            // Initial tube angle
+            tube.angle = -Math.PI / 4;
+        }
+
+        function resetLevel() {
+            loadLevel(currentLevel);
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            loadLevel(currentLevel);
+        }
+
+        function showMessage(text) {
+            messageArea.innerText = text;
+        }
+
+        function hideMessage() {
+            messageArea.innerText = '';
+        }
+
+        // Main game update function
+        function update() {
+            if (isBallLaunched && !gameWon) {
+                ball.update();
+                checkCollisions();
+                
+                if (ball.x < 0 || ball.x > canvas.width || ball.y < 0 || ball.y > canvas.height) {
+                    isBallLaunched = false;
+                    showMessage("Level Failed! Try again.");
+                    document.getElementById('launchBtn').classList.remove('hidden');
+                }
+            }
+            
+            shatterParticles = shatterParticles.filter(p => p.life > 0);
+            shatterParticles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+            });
+            
+            collisionParticles = collisionParticles.filter(p => p.life > 0);
+            collisionParticles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+            });
+        }
+
+        function checkCollisions() {
+            const dist = Math.hypot(ball.x - goal.x, ball.y - goal.y);
+            if (dist < ball.radius + goal.radius && !gameWon) {
+                if (surfacesHit.size === reflectiveSurfaces.length) {
+                    goal.shatter();
+                    gameWon = true;
+                    isBallLaunched = false;
+                    showMessage("Success! Click 'Next Level' to continue.");
+                    document.getElementById('launchBtn').classList.add('hidden');
+                    document.getElementById('nextLevelBtn').classList.remove('hidden');
+                } else {
+                    isBallLaunched = false;
+                    showMessage("Level Failed! You missed some reflective surfaces. Try again.");
+                    document.getElementById('launchBtn').classList.remove('hidden');
+                }
+                return;
+            }
+
+            for (let i = 0; i < reflectiveSurfaces.length; i++) {
+                const wall = reflectiveSurfaces[i];
+                const p1 = wall.p1;
+                const p2 = wall.p2;
+                
+                const wallVector = { x: p2.x - p1.x, y: p2.y - p1.y };
+                const wallLengthSq = wallVector.x * wallVector.x + wallVector.y * wallVector.y;
+                
+                const p1ToBall = { x: ball.x - p1.x, y: ball.y - p1.y };
+                
+                const dotProduct = p1ToBall.x * wallVector.x + p1ToBall.y * wallVector.y;
+                const t = Math.max(0, Math.min(1, dotProduct / wallLengthSq));
+                
+                const closestPoint = {
+                    x: p1.x + t * wallVector.x,
+                    y: p1.y + t * wallVector.y
+                };
+                
+                const dx = ball.x - closestPoint.x;
+                const dy = ball.y - closestPoint.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < ball.radius) {
+                    if (!surfacesHit.has(i)) {
+                        surfacesHit.add(i);
+                    }
+
+                    createCollisionParticles(closestPoint.x, closestPoint.y);
+
+                    const normal = { x: -wallVector.y, y: wallVector.x };
+                    const normalLength = Math.sqrt(normal.x * normal.x + normal.y * normal.y);
+                    normal.x /= normalLength;
+                    normal.y /= normalLength;
+                    
+                    const velocity = { x: ball.vx, y: ball.vy };
+                    const dot = velocity.x * normal.x + velocity.y * normal.y;
+                    
+                    ball.vx = velocity.x - 2 * dot * normal.x;
+                    ball.vy = velocity.y - 2 * dot * normal.y;
+                    
+                    const newSpeed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+                    const scaleFactor = ball.speed / newSpeed;
+                    ball.vx *= scaleFactor;
+                    ball.vy *= scaleFactor;
+                    
+                    ball.x = closestPoint.x + dx * (ball.radius / distance);
+                    ball.y = closestPoint.y + dy * (ball.radius / distance);
+                }
+            }
+        }
+
+        // Main game draw function
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            tube.draw();
+            goal.draw();
+            
+            reflectiveSurfaces.forEach((s, index) => s.draw(s === selectedSurface, surfacesHit.has(index)));
+
+            if (isBallLaunched) {
+                ball.draw();
+            }
+
+            shatterParticles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.closePath();
+            });
+            
+            collisionParticles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+
+        // Main game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // --- Event Listeners ---
+        document.getElementById('launchBtn').addEventListener('click', () => {
+            if (!isBallLaunched && !gameWon) {
+                if (!selectedSurface) {
+                    showMessage("Please select a reflective surface to aim at!");
+                    return;
+                }
+                
+                isBallLaunched = true;
+                hideMessage();
+                
+                const targetX = selectedSurface.cx;
+                const targetY = selectedSurface.cy;
+                const dx = targetX - (tube.x + tube.length * Math.cos(tube.angle));
+                const dy = targetY - (tube.y + tube.length * Math.sin(tube.angle));
+                const angle = Math.atan2(dy, dx);
+                ball.vx = ball.speed * Math.cos(angle);
+                ball.vy = ball.speed * Math.sin(angle);
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            resetLevel();
+        });
+
+        document.getElementById('nextLevelBtn').addEventListener('click', () => {
+            nextLevel();
+        });
+        
+        document.getElementById('rotateLeftBtn').addEventListener('click', () => { 
+            if (selectedSurface) selectedSurface.rotate(-Math.PI / 18); // 10 degrees 
+        });
+        document.getElementById('rotateRightBtn').addEventListener('click', () => { 
+            if (selectedSurface) selectedSurface.rotate(Math.PI / 18); // 10 degrees
+        });
+
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (isBallLaunched) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            selectedSurface = null;
+            isDragging = false;
+
+            for (const surface of reflectiveSurfaces) {
+                if (surface.movable && surface.isNear(mouseX, mouseY)) {
+                    selectedSurface = surface;
+                    isDragging = true;
+                    dragStartX = mouseX;
+                    dragStartY = mouseY;
+                    break;
+                }
+            }
+            
+            if (selectedSurface) {
+                controlButtonsContainer.classList.remove('hidden');
+                const dx = selectedSurface.cx - tube.x;
+                const dy = selectedSurface.cy - tube.y;
+                tube.angle = Math.atan2(dy, dx);
+            } else {
+                controlButtonsContainer.classList.add('hidden');
+                tube.angle = -Math.PI / 4;
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging || !selectedSurface || isBallLaunched) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const dx = mouseX - dragStartX;
+            const dy = mouseY - dragStartY;
+
+            selectedSurface.move(dx, dy);
+            dragStartX = mouseX;
+            dragStartY = mouseY;
+            
+            const tubeDx = selectedSurface.cx - tube.x;
+            const tubeDy = selectedSurface.cy - tube.y;
+            tube.angle = Math.atan2(tubeDy, tubeDx);
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Touch events for mobile devices
+        canvas.addEventListener('touchstart', (e) => {
+            if (isBallLaunched) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+
+            selectedSurface = null;
+            isDragging = false;
+            
+            for (const surface of reflectiveSurfaces) {
+                if (surface.movable && surface.isNear(touchX, touchY)) {
+                    selectedSurface = surface;
+                    isDragging = true;
+                    dragStartX = touchX;
+                    dragStartY = touchY;
+                    break;
+                }
+            }
+            
+            if (selectedSurface) {
+                controlButtonsContainer.classList.remove('hidden');
+                const dx = selectedSurface.cx - tube.x;
+                const dy = selectedSurface.cy - tube.y;
+                tube.angle = Math.atan2(dy, dx);
+            } else {
+                controlButtonsContainer.classList.add('hidden');
+                tube.angle = -Math.PI / 4;
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDragging || !selectedSurface || isBallLaunched) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+
+            const dx = touchX - dragStartX;
+            const dy = touchY - dragStartY;
+
+            selectedSurface.move(dx, dy);
+            dragStartX = touchX;
+            dragStartY = touchY;
+            
+            const tubeDx = selectedSurface.cx - tube.x;
+            const tubeDy = selectedSurface.cy - tube.y;
+            tube.angle = Math.atan2(tubeDy, tubeDx);
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // Initial setup
+        window.onload = function() {
+            loadLevel(currentLevel);
+            gameLoop();
+        }
+    </script>
+
+</body>
+</html>
